@@ -293,7 +293,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="batchInputDirBrowse">
+                      <object class="GtkButton" id="batchInputDirBrowseButton">
                         <property name="label" translatable="yes">Browse...</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>

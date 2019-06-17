@@ -191,6 +191,49 @@ static void choose_output_file_single(GtkWidget *widget, gpointer data)
     gtk_widget_destroy(dialog);
 }
 
+static void choose_directory(GtkBuilder *builder, GtkEntry *entry, const gchar *windowTitle)
+{
+    GtkWindow *parentWindow = GTK_WINDOW(gtk_builder_get_object(builder, "mainWindow"));
+    GtkWidget *dialog;
+    gint res;
+
+    dialog = gtk_file_chooser_dialog_new(windowTitle,
+                                         parentWindow,
+                                         GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                         "_Cancel",
+                                         GTK_RESPONSE_CANCEL,
+                                         "_Open",
+                                         GTK_RESPONSE_ACCEPT,
+                                         NULL);
+
+    res = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (res == GTK_RESPONSE_ACCEPT)
+    {
+        char *filename;
+        GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+        filename = gtk_file_chooser_get_filename(chooser);
+
+        gtk_entry_set_text(entry, filename);
+        g_free(filename);
+    }
+
+    gtk_widget_destroy(dialog);
+}
+
+static void choose_input_directory_batch(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkEntry *entry = GTK_ENTRY(gtk_builder_get_object(builder, "batchInputDirEntry"));
+    choose_directory(builder, entry, "Select input directory");
+}
+
+static void choose_output_directory_batch(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkEntry *entry = GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry"));
+    choose_directory(builder, entry, "Select output directory");
+}
+
 static void convert_single(GtkWidget *widget, gpointer data)
 {
     GtkBuilder *builder = (GtkBuilder*) data;
@@ -398,8 +441,14 @@ int main(int argc, char **argv)
     button = gtk_builder_get_object(builder, "singleFileConvertButton");
     g_signal_connect(button, "clicked", G_CALLBACK(convert_single), builder);
 
+    button = gtk_builder_get_object(builder, "batchInputDirBrowseButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(choose_input_directory_batch), builder);
+
     button = gtk_builder_get_object(builder, "batchPaletteFileBrowseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(choose_palette_file_batch), builder);
+
+    button = gtk_builder_get_object(builder, "batchOutputDirBrowseButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(choose_output_directory_batch), builder);
 
     button = gtk_builder_get_object(builder, "progressDialogCloseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(hide_progress_dialog), builder);
