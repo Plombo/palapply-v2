@@ -1,0 +1,10 @@
+gui
+palapply
+*.o
+*.exe
+*~
+*.png
+*.gif
+*.pcx
+*.bmp
+
