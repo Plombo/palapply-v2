@@ -292,19 +292,41 @@ static void convert_single(GtkWidget *widget, gpointer data)
             snprintf(maskPath + outputPathLength - 4, 10, "-mask.png");
             printf("mask path: %s\n", maskPath);
 
-            if (!saveMask(maskPath, img))
+            bool writeMask;
+            if (file_exists(maskPath))
             {
-                fprintf(stderr, "error: failed to save alpha mask '%s'\n", maskPath);
-                gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save alpha mask ", -1);
-                gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
-                gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                fprintf(stderr, "mask file already exists!\n");
+                GtkWidget *dialog = gtk_message_dialog_new(window,
+                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                        GTK_MESSAGE_QUESTION,
+                        GTK_BUTTONS_YES_NO,
+                        "The file %s already exists. Do you want to overwrite it?",
+                        maskPath);
+                gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+                writeMask = (response == GTK_RESPONSE_YES);
+                gtk_widget_destroy(dialog);
             }
             else
             {
-                printf("saved alpha mask to '%s'\n", maskPath);
-                gtk_text_buffer_insert_at_cursor(progressLog, "Saved alpha mask ", -1);
-                gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
-                gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                writeMask = true;
+            }
+
+            if (writeMask)
+            {
+                if (!saveMask(maskPath, img))
+                {
+                    fprintf(stderr, "error: failed to save alpha mask '%s'\n", maskPath);
+                    gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save alpha mask ", -1);
+                    gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
+                    gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                }
+                else
+                {
+                    printf("saved alpha mask to '%s'\n", maskPath);
+                    gtk_text_buffer_insert_at_cursor(progressLog, "Saved alpha mask ", -1);
+                    gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
+                    gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                }
             }
 
             free(maskPath);
