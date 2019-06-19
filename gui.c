@@ -234,11 +234,22 @@ static void choose_output_directory_batch(GtkWidget *widget, gpointer data)
     choose_directory(builder, entry, "Select output directory");
 }
 
-// TODO: return bool for success/failure
+// sets the vertical scroll position of a GtkScrollable to the bottom
+static void scroll_to_bottom(GtkScrollable *scrollable)
+{
+    GtkAdjustment *adj = gtk_scrollable_get_vadjustment(scrollable);
+    gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj));
+
+    // run the main loop to actually apply the scrolling
+    while (gtk_events_pending())
+      gtk_main_iteration();
+}
+
 static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gchar *outputPath, const gchar *palettePath)
 {
     GtkWindow *progressDialog = GTK_WINDOW(gtk_builder_get_object(builder, "progressDialog"));
-    GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "progressTextView")));
+    GtkScrollable *progressTextView = GTK_SCROLLABLE(gtk_builder_get_object(builder, "progressTextView"));
+    GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(progressTextView));
 
     if (!readPalette(palettePath))
     {
@@ -253,6 +264,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
         gtk_text_buffer_insert_at_cursor(progressLog, "Read image ", -1);
         gtk_text_buffer_insert_at_cursor(progressLog, inputPath, -1);
         gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+        scroll_to_bottom(progressTextView);
     }
     else
     {
@@ -288,6 +300,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
             gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save image ", -1);
             gtk_text_buffer_insert_at_cursor(progressLog, outputPath, -1);
             gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+            scroll_to_bottom(progressTextView);
             SDL_FreeSurface(img);
             return false;
         }
@@ -296,6 +309,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
             gtk_text_buffer_insert_at_cursor(progressLog, "Saved image ", -1);
             gtk_text_buffer_insert_at_cursor(progressLog, outputPath, -1);
             gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+            scroll_to_bottom(progressTextView);
         }
     }
 
@@ -338,6 +352,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                     gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save alpha mask ", -1);
                     gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
                     gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                    scroll_to_bottom(progressTextView);
                     free(maskPath);
                     SDL_FreeSurface(img);
                     return false;
@@ -348,6 +363,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                     gtk_text_buffer_insert_at_cursor(progressLog, "Saved alpha mask ", -1);
                     gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
                     gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                    scroll_to_bottom(progressTextView);
                 }
             }
 
@@ -412,7 +428,8 @@ static void convert_batch(GtkWidget *widget, gpointer data)
 {
     GtkBuilder *builder = (GtkBuilder*) data;
     GtkWidget *progressDialog = GTK_WIDGET(gtk_builder_get_object(builder, "progressDialog"));
-    GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "progressTextView")));
+    GtkScrollable *progressTextView = GTK_SCROLLABLE(gtk_builder_get_object(builder, "progressTextView"));
+    GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(progressTextView));
     GtkProgressBar *progressBar = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "progressBar"));
     GtkComboBoxText *extensionBox = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "batchInputFileExtensionBox"));
 
@@ -464,12 +481,16 @@ static void convert_batch(GtkWidget *widget, gpointer data)
     if (!ok)
     {
         gtk_text_buffer_insert_at_cursor(progressLog, "\nAn error occurred", -1);
+        scroll_to_bottom(progressTextView);
     }
     else
     {
         gtk_progress_bar_set_fraction(progressBar, 1.0);
         gtk_text_buffer_insert_at_cursor(progressLog, "\nDone", -1);
+        scroll_to_bottom(progressTextView);
     }
+
+    scroll_to_bottom(progressTextView);
 }
 
 // Clear any previously written text from the log when the progress dialog is shown.
