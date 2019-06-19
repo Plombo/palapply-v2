@@ -383,7 +383,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                         GTK_MESSAGE_QUESTION,
                         batchMode ? GTK_BUTTONS_NONE : GTK_BUTTONS_YES_NO,
                         "The file %s already exists. Do you want to overwrite it?",
-                        outputPath);
+                        maskPath);
 
                     if (batchMode)
                     {
