@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include "palapply.h"
+#include "helpfiles.h"
 
 static bool file_exists(const char *path)
 {
@@ -570,6 +571,34 @@ static void convert_batch(GtkWidget *widget, gpointer data)
     scroll_to_bottom(progressTextView);
 }
 
+static void show_help_single(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkWidget *helpDialog = GTK_WIDGET(gtk_builder_get_object(builder, "singleFileHelpDialog"));
+    gtk_widget_show_all(helpDialog);
+}
+
+static void close_help_single(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkWidget *helpDialog = GTK_WIDGET(gtk_builder_get_object(builder, "singleFileHelpDialog"));
+    gtk_widget_hide(helpDialog);
+}
+
+static void show_help_batch(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkWidget *helpDialog = GTK_WIDGET(gtk_builder_get_object(builder, "batchHelpDialog"));
+    gtk_widget_show_all(helpDialog);
+}
+
+static void close_help_batch(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkWidget *helpDialog = GTK_WIDGET(gtk_builder_get_object(builder, "batchHelpDialog"));
+    gtk_widget_hide(helpDialog);
+}
+
 // Clear any previously written text from the log when the progress dialog is shown.
 static void on_show_progress_dialog(GtkWidget *widget, gpointer data)
 {
@@ -623,6 +652,12 @@ int main(int argc, char **argv)
     button = gtk_builder_get_object(builder, "singleFileConvertButton");
     g_signal_connect(button, "clicked", G_CALLBACK(convert_single), builder);
 
+    button = gtk_builder_get_object(builder, "singleFileHelpButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(show_help_single), builder);
+
+    button = gtk_builder_get_object(builder, "singleFileHelpCloseButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(close_help_single), builder);
+
     button = gtk_builder_get_object(builder, "batchInputDirBrowseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(choose_input_directory_batch), builder);
 
@@ -635,11 +670,28 @@ int main(int argc, char **argv)
     button = gtk_builder_get_object(builder, "batchConvertButton");
     g_signal_connect(button, "clicked", G_CALLBACK(convert_batch), builder);
 
+    button = gtk_builder_get_object(builder, "batchHelpButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(show_help_batch), builder);
+
+    button = gtk_builder_get_object(builder, "batchHelpCloseButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(close_help_batch), builder);
+
     button = gtk_builder_get_object(builder, "progressDialogCloseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(hide_progress_dialog), builder);
 
     GObject *dialog = gtk_builder_get_object(builder, "progressDialog");
     g_signal_connect(dialog, "show", G_CALLBACK(on_show_progress_dialog), builder);
+
+    // Populate the help dialogs with the help text. Ideally, this would be done in Glade, but it doesn't seem to
+    // support populating GtkTextBuffers with markup.
+    GtkTextIter iter;
+    GtkTextBuffer *helpTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "singleFileHelpTextView")));
+    gtk_text_buffer_get_start_iter(helpTextBuffer, &iter);
+    gtk_text_buffer_insert_markup(helpTextBuffer, &iter, singleFileHelpText, -1);
+
+    helpTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "batchHelpTextView")));
+    gtk_text_buffer_get_start_iter(helpTextBuffer, &iter);
+    gtk_text_buffer_insert_markup(helpTextBuffer, &iter, batchHelpText, -1);
 
     gtk_widget_show_all(GTK_WIDGET(window));
     gtk_main();
