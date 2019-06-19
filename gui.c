@@ -234,6 +234,14 @@ static void choose_output_directory_batch(GtkWidget *widget, gpointer data)
     choose_directory(builder, entry, "Select output directory");
 }
 
+// inserts text at the end of a GtkTextBuffer
+static void text_buffer_append(GtkTextBuffer *textBuffer, const gchar *text)
+{
+    GtkTextIter endIter;
+    gtk_text_buffer_get_end_iter(textBuffer, &endIter);
+    gtk_text_buffer_insert(textBuffer, &endIter, text, -1);
+}
+
 // sets the vertical scroll position of a GtkScrollable to the bottom
 static void scroll_to_bottom(GtkScrollable *scrollable)
 {
@@ -261,9 +269,9 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
     if (img)
     {
         printf("read image %s\n", inputPath);
-        gtk_text_buffer_insert_at_cursor(progressLog, "Read image ", -1);
-        gtk_text_buffer_insert_at_cursor(progressLog, inputPath, -1);
-        gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+        text_buffer_append(progressLog, "Read image ");
+        text_buffer_append(progressLog, inputPath);
+        text_buffer_append(progressLog, "\n");
         scroll_to_bottom(progressTextView);
     }
     else
@@ -297,18 +305,18 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
         if (!saveIndexedPNG(outputPath, img))
         {
             fprintf(stderr, "error: failed to save result '%s'\n", outputPath);
-            gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save image ", -1);
-            gtk_text_buffer_insert_at_cursor(progressLog, outputPath, -1);
-            gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+            text_buffer_append(progressLog, "\nFailed to save image ");
+            text_buffer_append(progressLog, outputPath);
+            text_buffer_append(progressLog, "\n");
             scroll_to_bottom(progressTextView);
             SDL_FreeSurface(img);
             return false;
         }
         else
         {
-            gtk_text_buffer_insert_at_cursor(progressLog, "Saved image ", -1);
-            gtk_text_buffer_insert_at_cursor(progressLog, outputPath, -1);
-            gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+            text_buffer_append(progressLog, "Saved image ");
+            text_buffer_append(progressLog, outputPath);
+            text_buffer_append(progressLog, "\n");
             scroll_to_bottom(progressTextView);
         }
     }
@@ -349,9 +357,9 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                 if (!saveMask(maskPath, img))
                 {
                     fprintf(stderr, "error: failed to save alpha mask '%s'\n", maskPath);
-                    gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save alpha mask ", -1);
-                    gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
-                    gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                    text_buffer_append(progressLog, "\nFailed to save alpha mask ");
+                    text_buffer_append(progressLog, maskPath);
+                    text_buffer_append(progressLog, "\n");
                     scroll_to_bottom(progressTextView);
                     free(maskPath);
                     SDL_FreeSurface(img);
@@ -360,9 +368,9 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                 else
                 {
                     printf("saved alpha mask to '%s'\n", maskPath);
-                    gtk_text_buffer_insert_at_cursor(progressLog, "Saved alpha mask ", -1);
-                    gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
-                    gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                    text_buffer_append(progressLog, "Saved alpha mask ");
+                    text_buffer_append(progressLog, maskPath);
+                    text_buffer_append(progressLog, "\n");
                     scroll_to_bottom(progressTextView);
                 }
             }
@@ -414,11 +422,11 @@ static void convert_single(GtkWidget *widget, gpointer data)
     if (convert_file(builder, inputPath, outputPath, palettePath))
     {
         gtk_progress_bar_set_fraction(progressBar, 1.0);
-        gtk_text_buffer_insert_at_cursor(progressLog, "\nDone", -1);
+        text_buffer_append(progressLog, "\nDone");
     }
     else
     {
-        gtk_text_buffer_insert_at_cursor(progressLog, "\nAn error occurred", -1);
+        text_buffer_append(progressLog, "\nAn error occurred");
     }
 
     free(outputPath);
@@ -480,13 +488,13 @@ static void convert_batch(GtkWidget *widget, gpointer data)
 
     if (!ok)
     {
-        gtk_text_buffer_insert_at_cursor(progressLog, "\nAn error occurred", -1);
+        text_buffer_append(progressLog, "\nAn error occurred");
         scroll_to_bottom(progressTextView);
     }
     else
     {
         gtk_progress_bar_set_fraction(progressBar, 1.0);
-        gtk_text_buffer_insert_at_cursor(progressLog, "\nDone", -1);
+        text_buffer_append(progressLog, "\nDone");
         scroll_to_bottom(progressTextView);
     }
 
