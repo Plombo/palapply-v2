@@ -267,22 +267,20 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
 
     if (!readPalette(palettePath))
     {
-        fprintf(stderr, "error: failed to load palette image '%s'\n", palettePath);
+        text_buffer_append(progressLog, "Failed to load palette from ");
+        text_buffer_append(progressLog, palettePath);
+        text_buffer_append(progressLog, "\n");
+        scroll_to_bottom(progressTextView);
         return false;
     }
 
     SDL_Surface *img = readSourceImage(inputPath);
-    if (img)
+    if (!img)
     {
-        printf("read image %s\n", inputPath);
-        text_buffer_append(progressLog, "Read image ");
+        text_buffer_append(progressLog, "\nFailed to read image ");
         text_buffer_append(progressLog, inputPath);
         text_buffer_append(progressLog, "\n");
         scroll_to_bottom(progressTextView);
-    }
-    else
-    {
-        fprintf(stderr, "error: failed to load image %s\n", inputPath);
         SDL_FreeSurface(img);
         return false;
     }
@@ -299,7 +297,6 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
         }
         else
         {
-            fprintf(stderr, "file already exists!\n");
             GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
                     GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                     GTK_MESSAGE_QUESTION,
@@ -333,7 +330,6 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
     {
         if (!saveIndexedPNG(outputPath, img))
         {
-            fprintf(stderr, "error: failed to save result '%s'\n", outputPath);
             text_buffer_append(progressLog, "\nFailed to save image ");
             text_buffer_append(progressLog, outputPath);
             text_buffer_append(progressLog, "\n");
@@ -348,6 +344,13 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
             text_buffer_append(progressLog, "\n");
             scroll_to_bottom(progressTextView);
         }
+    }
+    else
+    {
+        text_buffer_append(progressLog, "Not overwriting ");
+        text_buffer_append(progressLog, outputPath);
+        text_buffer_append(progressLog, "\n");
+        scroll_to_bottom(progressTextView);
     }
 
     if (img->format->Amask)
@@ -374,7 +377,6 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                 }
                 else
                 {
-                    fprintf(stderr, "mask file already exists!\n");
                     GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
                         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_MESSAGE_QUESTION,
@@ -408,7 +410,6 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
             {
                 if (!saveMask(maskPath, img))
                 {
-                    fprintf(stderr, "error: failed to save alpha mask '%s'\n", maskPath);
                     text_buffer_append(progressLog, "\nFailed to save alpha mask ");
                     text_buffer_append(progressLog, maskPath);
                     text_buffer_append(progressLog, "\n");
@@ -419,12 +420,18 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                 }
                 else
                 {
-                    printf("saved alpha mask to '%s'\n", maskPath);
                     text_buffer_append(progressLog, "Saved alpha mask ");
                     text_buffer_append(progressLog, maskPath);
                     text_buffer_append(progressLog, "\n");
                     scroll_to_bottom(progressTextView);
                 }
+            }
+            else
+            {
+                text_buffer_append(progressLog, "Not overwriting ");
+                text_buffer_append(progressLog, maskPath);
+                text_buffer_append(progressLog, "\n");
+                scroll_to_bottom(progressTextView);
             }
 
             free(maskPath);
