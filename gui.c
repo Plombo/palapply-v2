@@ -321,6 +321,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
             writeOutput = (*response == GTK_RESPONSE_YES || *response == RESPONSE_YES_ALL);
             if (*response == GTK_RESPONSE_CANCEL)
             {
+                SDL_FreeSurface(img);
                 return false;
             }
         }
@@ -401,6 +402,8 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
                     writeMask = (*response == GTK_RESPONSE_YES || *response == RESPONSE_YES_ALL);
                     if (*response == GTK_RESPONSE_CANCEL)
                     {
+                        SDL_FreeSurface(img);
+                        free(maskPath);
                         return false;
                     }
                 }
