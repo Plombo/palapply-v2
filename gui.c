@@ -234,23 +234,16 @@ static void choose_output_directory_batch(GtkWidget *widget, gpointer data)
     choose_directory(builder, entry, "Select output directory");
 }
 
-static void convert_single(GtkWidget *widget, gpointer data)
+// TODO: return bool for success/failure
+static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gchar *outputPath, const gchar *palettePath)
 {
-    GtkBuilder *builder = (GtkBuilder*) data;
-    GtkWindow *window = GTK_WINDOW(gtk_builder_get_object(builder, "mainWindow"));
-    GtkWidget *progressDialog = GTK_WIDGET(gtk_builder_get_object(builder, "progressDialog"));
-    GtkProgressBar *progressBar = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "progressBar"));
+    GtkWindow *progressDialog = GTK_WINDOW(gtk_builder_get_object(builder, "progressDialog"));
     GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "progressTextView")));
-    const gchar *inputPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singleInputFileEntry")));
-    const gchar *palettePath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singlePaletteFileEntry")));
-    const gchar *rawOutputPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singleOutputFileEntry")));
-
-    gtk_widget_show_all(progressDialog);
 
     if (!readPalette(palettePath))
     {
         fprintf(stderr, "error: failed to load palette image '%s'\n", palettePath);
-        return;
+        return false;
     }
 
     SDL_Surface *img = readSourceImage(inputPath);
@@ -265,30 +258,14 @@ static void convert_single(GtkWidget *widget, gpointer data)
     {
         fprintf(stderr, "error: failed to load image %s\n", inputPath);
         SDL_FreeSurface(img);
-        return;
-    }
-
-    // add a ".png" suffix to the output path if it doesn't already have one
-    gchar *outputPath;
-    size_t outputPathLength;
-    gchar *rawOutputPathExt = strrchr(rawOutputPath, '.');
-    if (rawOutputPathExt == NULL || g_ascii_strcasecmp(rawOutputPathExt, ".png") != 0)
-    {
-        outputPathLength = strlen(rawOutputPath) + 4; // 4 bytes for ".png" suffix
-        outputPath = malloc(outputPathLength + 1);
-        snprintf(outputPath, outputPathLength + 1, "%s.png", rawOutputPath);
-    }
-    else
-    {
-        outputPath = strdup(rawOutputPath);
-        outputPathLength = strlen(outputPath);
+        return false;
     }
 
     bool writeOutput;
     if (file_exists(outputPath))
     {
         fprintf(stderr, "file already exists!\n");
-        GtkWidget *dialog = gtk_message_dialog_new(window,
+        GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                 GTK_MESSAGE_QUESTION,
                 GTK_BUTTONS_YES_NO,
@@ -312,15 +289,13 @@ static void convert_single(GtkWidget *widget, gpointer data)
             gtk_text_buffer_insert_at_cursor(progressLog, outputPath, -1);
             gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
             SDL_FreeSurface(img);
-            free(outputPath);
-            return;
+            return false;
         }
         else
         {
             gtk_text_buffer_insert_at_cursor(progressLog, "Saved image ", -1);
             gtk_text_buffer_insert_at_cursor(progressLog, outputPath, -1);
             gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
-            gtk_progress_bar_set_fraction(progressBar, 1.0);
         }
     }
 
@@ -329,6 +304,7 @@ static void convert_single(GtkWidget *widget, gpointer data)
         if (needsMask(img))
         {
             // make a mask filename
+            size_t outputPathLength = strlen(outputPath);
             size_t maskPathLength = outputPathLength + 6; // 5 bytes for "-mask"
             gchar *maskPath = malloc(maskPathLength + 1);
             memcpy(maskPath, outputPath, outputPathLength - 4); // copy everything up to ".png" extension
@@ -339,7 +315,7 @@ static void convert_single(GtkWidget *widget, gpointer data)
             if (file_exists(maskPath))
             {
                 fprintf(stderr, "mask file already exists!\n");
-                GtkWidget *dialog = gtk_message_dialog_new(window,
+                GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
                         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_MESSAGE_QUESTION,
                         GTK_BUTTONS_YES_NO,
@@ -362,6 +338,9 @@ static void convert_single(GtkWidget *widget, gpointer data)
                     gtk_text_buffer_insert_at_cursor(progressLog, "\nFailed to save alpha mask ", -1);
                     gtk_text_buffer_insert_at_cursor(progressLog, maskPath, -1);
                     gtk_text_buffer_insert_at_cursor(progressLog, "\n", -1);
+                    free(maskPath);
+                    SDL_FreeSurface(img);
+                    return false;
                 }
                 else
                 {
@@ -385,7 +364,112 @@ static void convert_single(GtkWidget *widget, gpointer data)
     }
 
     SDL_FreeSurface(img);
+    return true;
+}
+
+static void convert_single(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkWidget *progressDialog = GTK_WIDGET(gtk_builder_get_object(builder, "progressDialog"));
+    GtkProgressBar *progressBar = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "progressBar"));
+    GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "progressTextView")));
+    const gchar *inputPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singleInputFileEntry")));
+    const gchar *palettePath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singlePaletteFileEntry")));
+    const gchar *rawOutputPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singleOutputFileEntry")));
+
+    gtk_widget_show_all(progressDialog);
+
+    // add a ".png" suffix to the output path if it doesn't already have one
+    gchar *outputPath;
+    size_t outputPathLength;
+    gchar *rawOutputPathExt = strrchr(rawOutputPath, '.');
+    if (rawOutputPathExt == NULL || g_ascii_strcasecmp(rawOutputPathExt, ".png") != 0)
+    {
+        outputPathLength = strlen(rawOutputPath) + 4; // 4 bytes for ".png" suffix
+        outputPath = malloc(outputPathLength + 1);
+        snprintf(outputPath, outputPathLength + 1, "%s.png", rawOutputPath);
+    }
+    else
+    {
+        outputPath = strdup(rawOutputPath);
+        outputPathLength = strlen(outputPath);
+    }
+
+    if (convert_file(builder, inputPath, outputPath, palettePath))
+    {
+        gtk_progress_bar_set_fraction(progressBar, 1.0);
+        gtk_text_buffer_insert_at_cursor(progressLog, "\nDone", -1);
+    }
+    else
+    {
+        gtk_text_buffer_insert_at_cursor(progressLog, "\nAn error occurred", -1);
+    }
+
     free(outputPath);
+}
+
+static void convert_batch(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkWidget *progressDialog = GTK_WIDGET(gtk_builder_get_object(builder, "progressDialog"));
+    GtkTextBuffer *progressLog = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "progressTextView")));
+    GtkProgressBar *progressBar = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "progressBar"));
+    GtkComboBoxText *extensionBox = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "batchInputFileExtensionBox"));
+
+    const gchar *inputExtension = gtk_combo_box_text_get_active_text(extensionBox);
+    const gchar *inputDirPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchInputDirEntry")));
+    GDir *inputDir = g_dir_open(inputDirPath, 0, NULL);
+    const gchar *outputDirPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry")));
+    const gchar *palettePath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchPaletteFileEntry")));
+
+    gtk_widget_show_all(progressDialog);
+
+    const gchar *name;
+    bool ok = true;
+    while ((name = g_dir_read_name(inputDir)))
+    {
+        if (g_str_has_suffix(name, inputExtension))
+        {
+            // make full input path
+            size_t inputPathLength = strlen(inputDirPath) + strlen(name) + 1;
+            gchar *inputPath = malloc(inputPathLength + 1);
+            snprintf(inputPath, inputPathLength + 1, "%s/%s", inputDirPath, name);
+            printf("input file: %s\n", inputPath);
+
+            // make full output path
+            size_t outputPathLength = strlen(outputDirPath) + strlen(name) + 1;
+            gchar *outputPath = malloc(outputPathLength + 1);
+            snprintf(outputPath, outputPathLength + 1, "%s/%s", outputDirPath, name);
+
+            // replace output extension with ".png"
+            // this method works because the input filename is guaranteed to end with a 3-letter extension
+            memcpy(&outputPath[outputPathLength - 4], ".png", 4);
+            printf("output file: %s\n", outputPath);
+
+            // do the actual conversion
+            ok = convert_file(builder, inputPath, outputPath, palettePath);
+            free(inputPath);
+            free(outputPath);
+
+            if (!ok)
+            {
+                break;
+            }
+
+            // TODO: update progress bar
+        }
+    }
+    g_dir_close(inputDir);
+
+    if (!ok)
+    {
+        gtk_text_buffer_insert_at_cursor(progressLog, "\nAn error occurred", -1);
+    }
+    else
+    {
+        gtk_progress_bar_set_fraction(progressBar, 1.0);
+        gtk_text_buffer_insert_at_cursor(progressLog, "\nDone", -1);
+    }
 }
 
 // Clear any previously written text from the log when the progress dialog is shown.
@@ -449,6 +533,9 @@ int main(int argc, char **argv)
 
     button = gtk_builder_get_object(builder, "batchOutputDirBrowseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(choose_output_directory_batch), builder);
+
+    button = gtk_builder_get_object(builder, "batchConvertButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(convert_batch), builder);
 
     button = gtk_builder_get_object(builder, "progressDialogCloseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(hide_progress_dialog), builder);
