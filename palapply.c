@@ -135,7 +135,7 @@ bool saveIndexedPNG(const char *path, SDL_Surface *screen)
 
     for (y = 0; y < screen->h; y++)
     {
-        source = (int*)(screen->pixels + (y * screen->pitch));
+        source = (uint32_t *)(screen->pixels + (y * screen->pitch));
         for (i = 0, x = 0; x < screen->w; x++)
         {
             uint32_t color = 0;
@@ -212,7 +212,7 @@ bool saveMask(const char* filename, SDL_Surface *screen)
 
     for (y = 0; y < screen->h; y++)
     {
-        source = (int *)(screen->pixels + (y * screen->pitch));
+        source = (uint32_t *)(screen->pixels + (y * screen->pitch));
         for (i = 0, x = 0; x < screen->w; x++)
         {
             uint32_t color = source[x];
