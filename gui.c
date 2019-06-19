@@ -253,7 +253,13 @@ static void scroll_to_bottom(GtkScrollable *scrollable)
       gtk_main_iteration();
 }
 
-static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gchar *outputPath, const gchar *palettePath)
+enum CustomOverwriteResponse {
+    RESPONSE_NO_ALL,
+    RESPONSE_YES_ALL,
+};
+
+static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gchar *outputPath,
+                         const gchar *palettePath, bool batchMode, gint *response)
 {
     GtkWindow *progressDialog = GTK_WINDOW(gtk_builder_get_object(builder, "progressDialog"));
     GtkScrollable *progressTextView = GTK_SCROLLABLE(gtk_builder_get_object(builder, "progressTextView"));
@@ -281,23 +287,46 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
         return false;
     }
 
-    bool writeOutput;
+    bool writeOutput = true;
     if (file_exists(outputPath))
     {
-        fprintf(stderr, "file already exists!\n");
-        GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
-                GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                GTK_MESSAGE_QUESTION,
-                GTK_BUTTONS_YES_NO,
-                "The file %s already exists. Do you want to overwrite it?",
-                outputPath);
-        gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-        writeOutput = (response == GTK_RESPONSE_YES);
-        gtk_widget_destroy(dialog);
-    }
-    else
-    {
-        writeOutput = true;
+        if (*response == RESPONSE_YES_ALL)
+        {
+        }
+        else if (*response == RESPONSE_NO_ALL)
+        {
+            writeOutput = false;
+        }
+        else
+        {
+            fprintf(stderr, "file already exists!\n");
+            GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
+                    GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                    GTK_MESSAGE_QUESTION,
+                    batchMode ? GTK_BUTTONS_NONE : GTK_BUTTONS_YES_NO,
+                    "The file %s already exists. Do you want to overwrite it?",
+                    outputPath);
+
+            if (batchMode)
+            {
+                gtk_dialog_add_buttons(GTK_DIALOG(dialog),
+                        "_Cancel", GTK_RESPONSE_CANCEL,
+                        "N_o to all", RESPONSE_NO_ALL,
+                        "_No", GTK_RESPONSE_NO,
+                        "Y_es to all", RESPONSE_YES_ALL,
+                        "_Yes", GTK_RESPONSE_YES,
+                        NULL);
+            }
+
+            *response = gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+
+            writeOutput = (*response == GTK_RESPONSE_YES || *response == RESPONSE_YES_ALL);
+            if (*response == GTK_RESPONSE_CANCEL)
+            {
+                return false;
+            }
+        }
     }
 
     if (writeOutput)
@@ -333,23 +362,46 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
             snprintf(maskPath + outputPathLength - 4, 10, "-mask.png");
             printf("mask path: %s\n", maskPath);
 
-            bool writeMask;
+            bool writeMask = true;
             if (file_exists(maskPath))
             {
-                fprintf(stderr, "mask file already exists!\n");
-                GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
+                if (*response == RESPONSE_YES_ALL)
+                {
+                }
+                else if (*response == RESPONSE_NO_ALL)
+                {
+                    writeMask = false;
+                }
+                else
+                {
+                    fprintf(stderr, "mask file already exists!\n");
+                    GtkWidget *dialog = gtk_message_dialog_new(progressDialog,
                         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                         GTK_MESSAGE_QUESTION,
-                        GTK_BUTTONS_YES_NO,
+                        batchMode ? GTK_BUTTONS_NONE : GTK_BUTTONS_YES_NO,
                         "The file %s already exists. Do you want to overwrite it?",
-                        maskPath);
-                gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-                writeMask = (response == GTK_RESPONSE_YES);
-                gtk_widget_destroy(dialog);
-            }
-            else
-            {
-                writeMask = true;
+                        outputPath);
+
+                    if (batchMode)
+                    {
+                        gtk_dialog_add_buttons(GTK_DIALOG(dialog),
+                                "_Cancel", GTK_RESPONSE_CANCEL,
+                                "N_o to all", RESPONSE_NO_ALL,
+                                "_No", GTK_RESPONSE_NO,
+                                "Y_es to all", RESPONSE_YES_ALL,
+                                "_Yes", GTK_RESPONSE_YES,
+                                NULL);
+                    }
+
+                    *response = gtk_dialog_run(GTK_DIALOG(dialog));
+                    gtk_widget_destroy(dialog);
+
+                    writeMask = (*response == GTK_RESPONSE_YES || *response == RESPONSE_YES_ALL);
+                    if (*response == GTK_RESPONSE_CANCEL)
+                    {
+                        return false;
+                    }
+                }
             }
 
             if (writeMask)
@@ -419,7 +471,8 @@ static void convert_single(GtkWidget *widget, gpointer data)
         outputPathLength = strlen(outputPath);
     }
 
-    if (convert_file(builder, inputPath, outputPath, palettePath))
+    gint response = GTK_RESPONSE_NONE;
+    if (convert_file(builder, inputPath, outputPath, palettePath, false, &response))
     {
         gtk_progress_bar_set_fraction(progressBar, 1.0);
         text_buffer_append(progressLog, "\nDone");
@@ -451,6 +504,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
 
     const gchar *name;
     bool ok = true;
+    gint response = GTK_RESPONSE_NONE;
     while ((name = g_dir_read_name(inputDir)))
     {
         if (g_str_has_suffix(name, inputExtension))
@@ -472,11 +526,11 @@ static void convert_batch(GtkWidget *widget, gpointer data)
             printf("output file: %s\n", outputPath);
 
             // do the actual conversion
-            ok = convert_file(builder, inputPath, outputPath, palettePath);
+            ok = convert_file(builder, inputPath, outputPath, palettePath, true, &response);
             free(inputPath);
             free(outputPath);
 
-            if (!ok)
+            if (response == GTK_RESPONSE_CANCEL || !ok)
             {
                 break;
             }
@@ -486,7 +540,12 @@ static void convert_batch(GtkWidget *widget, gpointer data)
     }
     g_dir_close(inputDir);
 
-    if (!ok)
+    if (response == GTK_RESPONSE_CANCEL)
+    {
+        text_buffer_append(progressLog, "\nCanceled");
+        scroll_to_bottom(progressTextView);
+    }
+    else if (!ok)
     {
         text_buffer_append(progressLog, "\nAn error occurred");
         scroll_to_bottom(progressTextView);
