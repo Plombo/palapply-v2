@@ -513,43 +513,80 @@ static void convert_batch(GtkWidget *widget, gpointer data)
 
     gtk_widget_show_all(progressDialog);
 
+    struct InputName {
+        gchar *name;
+        struct InputName *next;
+    };
+    struct InputName *nameList = NULL, *cur = NULL;
     const gchar *name;
-    bool ok = true;
-    gint response = GTK_RESPONSE_NONE;
     while ((name = g_dir_read_name(inputDir)))
     {
         if (g_str_has_suffix(name, inputExtension))
         {
-            // make full input path
-            size_t inputPathLength = strlen(inputDirPath) + strlen(name) + 1;
-            gchar *inputPath = malloc(inputPathLength + 1);
-            snprintf(inputPath, inputPathLength + 1, "%s/%s", inputDirPath, name);
-            printf("input file: %s\n", inputPath);
+            struct InputName *nameNode = malloc(sizeof(struct InputName));
+            nameNode->name = strdup(name);
+            nameNode->next = NULL;
 
-            // make full output path
-            size_t outputPathLength = strlen(outputDirPath) + strlen(name) + 1;
-            gchar *outputPath = malloc(outputPathLength + 1);
-            snprintf(outputPath, outputPathLength + 1, "%s/%s", outputDirPath, name);
-
-            // replace output extension with ".png"
-            // this method works because the input filename is guaranteed to end with a 3-letter extension
-            memcpy(&outputPath[outputPathLength - 4], ".png", 4);
-            printf("output file: %s\n", outputPath);
-
-            // do the actual conversion
-            ok = convert_file(builder, inputPath, outputPath, palettePath, true, &response);
-            free(inputPath);
-            free(outputPath);
-
-            if (response == GTK_RESPONSE_CANCEL || !ok)
+            if (nameList == NULL)
             {
-                break;
+                nameList = nameNode;
             }
 
-            // TODO: update progress bar
+            if (cur)
+            {
+                cur->next = nameNode;
+            }
+            cur = nameNode;
         }
     }
     g_dir_close(inputDir);
+
+    bool ok = true;
+    gint response = GTK_RESPONSE_NONE;
+    cur = nameList;
+    while (cur != NULL)
+    {
+        name = cur->name;
+
+        // make full input path
+        size_t inputPathLength = strlen(inputDirPath) + strlen(name) + 1;
+        gchar *inputPath = malloc(inputPathLength + 1);
+        snprintf(inputPath, inputPathLength + 1, "%s/%s", inputDirPath, name);
+        printf("input file: %s\n", inputPath);
+
+        // make full output path
+        size_t outputPathLength = strlen(outputDirPath) + strlen(name) + 1;
+        gchar *outputPath = malloc(outputPathLength + 1);
+        snprintf(outputPath, outputPathLength + 1, "%s/%s", outputDirPath, name);
+
+        // replace output extension with ".png"
+        // this method works because the input filename is guaranteed to end with a 3-letter extension
+        memcpy(&outputPath[outputPathLength - 4], ".png", 4);
+        printf("output file: %s\n", outputPath);
+
+        // do the actual conversion
+        ok = convert_file(builder, inputPath, outputPath, palettePath, true, &response);
+        free(inputPath);
+        free(outputPath);
+
+        if (response == GTK_RESPONSE_CANCEL || !ok)
+        {
+            break;
+        }
+
+        // TODO: update progress bar
+
+        cur = cur->next;
+    }
+
+    // Free the input name list
+    while (nameList != NULL)
+    {
+        struct InputName *next = nameList->next;
+        free(nameList->name);
+        free(nameList);
+        nameList = next;
+    }
 
     if (response == GTK_RESPONSE_CANCEL)
     {
