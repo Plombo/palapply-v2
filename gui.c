@@ -505,7 +505,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
     GtkProgressBar *progressBar = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "progressBar"));
     GtkComboBoxText *extensionBox = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "batchInputFileExtensionBox"));
 
-    const gchar *inputExtension = gtk_combo_box_text_get_active_text(extensionBox);
+    gchar *inputExtension = gtk_combo_box_text_get_active_text(extensionBox);
     const gchar *inputDirPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchInputDirEntry")));
     GDir *inputDir = g_dir_open(inputDirPath, 0, NULL);
     const gchar *outputDirPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry")));
@@ -540,6 +540,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
         }
     }
     g_dir_close(inputDir);
+    g_free(inputExtension);
 
     bool ok = true;
     gint response = GTK_RESPONSE_NONE;
