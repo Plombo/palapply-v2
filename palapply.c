@@ -175,7 +175,7 @@ bool saveIndexedPNG(const char *path, SDL_Surface *screen)
     free(line);
     line = NULL;
     png_write_end(png_ptr, info_ptr);
-    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
     return true;
 }
@@ -224,7 +224,7 @@ bool saveMask(const char* filename, SDL_Surface *screen)
     free(line);
     line = NULL;
     png_write_end(png_ptr, info_ptr);
-    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
     return true;
 }
