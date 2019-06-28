@@ -21,6 +21,11 @@
 #include "palapply.h"
 #include "helpfiles.h"
 
+// disable SDL_main definition
+#ifdef _WIN32
+#undef main
+#endif
+
 static gchar *lastDirectory = NULL;
 
 static bool file_exists(const char *path)
