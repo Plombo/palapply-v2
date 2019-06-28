@@ -656,6 +656,26 @@ static void hide_progress_dialog(GtkWidget *widget, gpointer data)
     gtk_widget_hide(progressDialog);
 }
 
+// Glade's support for "About" dialogs is lacking, so do this manually.
+static void show_about_dialog(GtkWidget *widget, gpointer data)
+{
+    GtkBuilder *builder = (GtkBuilder*) data;
+    GtkAboutDialog *aboutDialog = GTK_ABOUT_DIALOG(gtk_about_dialog_new());
+
+    gtk_about_dialog_set_program_name(aboutDialog, "PalApply v2");
+    gtk_about_dialog_set_version(aboutDialog, "Pre-release");
+    gtk_about_dialog_set_copyright(aboutDialog, "Copyright (c) 2010-2019 Bryan Cain");
+    gtk_about_dialog_set_license_type(aboutDialog, GTK_LICENSE_GPL_3_0);
+    gtk_about_dialog_set_website(aboutDialog, "https://github.com/Plombo/palapply-v2");
+    gtk_about_dialog_set_website_label(aboutDialog, "Website");
+    const gchar *authors[] = {"Bryan Cain", NULL};
+    gtk_about_dialog_set_authors(aboutDialog, authors);
+
+    gtk_window_set_transient_for(GTK_WINDOW(aboutDialog), GTK_WINDOW(gtk_builder_get_object(builder, "mainWindow")));
+    gtk_dialog_run(GTK_DIALOG(aboutDialog));
+    gtk_widget_destroy(GTK_WIDGET(aboutDialog));
+}
+
 int main(int argc, char **argv)
 {
     GtkBuilder *builder;
@@ -696,6 +716,9 @@ int main(int argc, char **argv)
     button = gtk_builder_get_object(builder, "singleFileHelpCloseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(close_help_single), builder);
 
+    button = gtk_builder_get_object(builder, "singleFileAboutButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(show_about_dialog), builder);
+
     button = gtk_builder_get_object(builder, "batchInputDirBrowseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(choose_input_directory_batch), builder);
 
@@ -713,6 +736,9 @@ int main(int argc, char **argv)
 
     button = gtk_builder_get_object(builder, "batchHelpCloseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(close_help_batch), builder);
+
+    button = gtk_builder_get_object(builder, "batchAboutButton");
+    g_signal_connect(button, "clicked", G_CALLBACK(show_about_dialog), builder);
 
     button = gtk_builder_get_object(builder, "progressDialogCloseButton");
     g_signal_connect(button, "clicked", G_CALLBACK(hide_progress_dialog), builder);
