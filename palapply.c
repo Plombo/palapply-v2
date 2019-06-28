@@ -235,7 +235,7 @@ bool needsMask(SDL_Surface *img)
     uint32_t x, y, *color;
     for (y = 0; y < img->h; y++)
     {
-        color = img->pixels + (y * img->w);
+        color = img->pixels + (y * img->pitch);
         for (x = 0; x < img->w; x++)
         {
             uint32_t alpha = ((*color) >> 24) & 0xff;
