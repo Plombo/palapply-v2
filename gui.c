@@ -21,6 +21,8 @@
 #include "palapply.h"
 #include "helpfiles.h"
 
+static gchar *lastDirectory = NULL;
+
 static bool file_exists(const char *path)
 {
     FILE *fp = fopen(path, "rb");
@@ -43,6 +45,11 @@ static void choose_palette_file(GtkBuilder *builder, GtkEntry *entry)
                                          "_Open",
                                          GTK_RESPONSE_ACCEPT,
                                          NULL);
+
+    if (lastDirectory != NULL)
+    {
+        gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), lastDirectory);
+    }
 
     // Both filter
     GtkFileFilter *filter = gtk_file_filter_new();
@@ -72,6 +79,9 @@ static void choose_palette_file(GtkBuilder *builder, GtkEntry *entry)
 
         gtk_entry_set_text(entry, filename);
         g_free(filename);
+
+        g_free(lastDirectory);
+        lastDirectory = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dialog));
     }
 
     gtk_widget_destroy(dialog);
@@ -107,6 +117,11 @@ static void choose_input_file_single(GtkWidget *widget, gpointer data)
                                          "_Open",
                                          GTK_RESPONSE_ACCEPT,
                                          NULL);
+
+    if (lastDirectory != NULL)
+    {
+        gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), lastDirectory);
+    }
 
     // All filter
     GtkFileFilter *filter = gtk_file_filter_new();
@@ -150,6 +165,9 @@ static void choose_input_file_single(GtkWidget *widget, gpointer data)
 
         gtk_entry_set_text(entry, filename);
         g_free(filename);
+
+        g_free(lastDirectory);
+        lastDirectory = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dialog));
     }
 
     gtk_widget_destroy(dialog);
@@ -172,6 +190,11 @@ static void choose_output_file_single(GtkWidget *widget, gpointer data)
                                          GTK_RESPONSE_ACCEPT,
                                          NULL);
 
+    if (lastDirectory != NULL)
+    {
+        gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), lastDirectory);
+    }
+
     // PNG filter
     GtkFileFilter *filter = gtk_file_filter_new();
     gtk_file_filter_set_name(filter, "Portable Network Graphics (*.png)");
@@ -187,6 +210,9 @@ static void choose_output_file_single(GtkWidget *widget, gpointer data)
 
         gtk_entry_set_text(entry, filename);
         g_free(filename);
+
+        g_free(lastDirectory);
+        lastDirectory = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dialog));
     }
 
     gtk_widget_destroy(dialog);
@@ -207,6 +233,11 @@ static void choose_directory(GtkBuilder *builder, GtkEntry *entry, const gchar *
                                          GTK_RESPONSE_ACCEPT,
                                          NULL);
 
+    if (lastDirectory != NULL)
+    {
+        gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), lastDirectory);
+    }
+
     res = gtk_dialog_run(GTK_DIALOG(dialog));
     if (res == GTK_RESPONSE_ACCEPT)
     {
@@ -216,6 +247,9 @@ static void choose_directory(GtkBuilder *builder, GtkEntry *entry, const gchar *
 
         gtk_entry_set_text(entry, filename);
         g_free(filename);
+
+        g_free(lastDirectory);
+        lastDirectory = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dialog));
     }
 
     gtk_widget_destroy(dialog);
@@ -759,6 +793,9 @@ int main(int argc, char **argv)
 
     gtk_widget_show_all(GTK_WIDGET(window));
     gtk_main();
+
+    g_free(lastDirectory);
+    lastDirectory = NULL;
 
     return 0;
 }
