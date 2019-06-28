@@ -357,7 +357,7 @@ static bool convert_file(GtkBuilder *builder, const gchar *inputPath, const gcha
 
     if (img->format->Amask)
     {
-        if (needsMask(img))
+        if (alphaType(img) == ALPHA_MASK_NEEDED)
         {
             // make a mask filename
             size_t outputPathLength = strlen(outputPath);

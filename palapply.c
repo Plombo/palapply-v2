@@ -91,8 +91,8 @@ SDL_Surface *readSourceImage(const char *path)
     SDL_BlitSurface(image, NULL, image32, NULL);
     SDL_FreeSurface(image);
 
-    // FIXME: this will break true color RGBA PNGs with alpha channels that are all 0 or 255
-    if (image32->format->Amask && !needsMask(image32))
+    // If there's technically an "alpha channel" but every pixel is 100% opaque, there isn't really an alpha channel.
+    if (image32->format->Amask && alphaType(image32) == ALPHA_NONE)
     {
         image32->format->Amask = 0;
     }
@@ -230,22 +230,30 @@ bool saveMask(const char* filename, SDL_Surface *screen)
 }
 
 // returns true if and only if alpha channel of img has at least one alpha value that isn't 0 or 255
-bool needsMask(SDL_Surface *img)
+AlphaType alphaType(SDL_Surface *img)
 {
     uint32_t x, y, *color;
+    AlphaType alphaType = ALPHA_NONE;
+
     for (y = 0; y < img->h; y++)
     {
         color = img->pixels + (y * img->pitch);
         for (x = 0; x < img->w; x++)
         {
             uint32_t alpha = ((*color) >> 24) & 0xff;
-            assert(alpha >= 0 && alpha <= 255);
-            if (alpha != 0 && alpha != 255) return true;
+            if (alpha == 0)
+            {
+                alphaType = ALPHA_SIMPLE;
+            }
+            else if (alpha != 255)
+            {
+                return ALPHA_MASK_NEEDED;
+            }
             color++;
         }
     }
 
-    return false;
+    return alphaType;
 }
 
 int commandLineMain(int argc, char **argv)
@@ -290,7 +298,7 @@ int commandLineMain(int argc, char **argv)
 
     if (img->format->Amask)
     {
-        if (needsMask(img))
+        if (alphaType(img) == ALPHA_MASK_NEEDED)
         {
             if (argc < 5)
             {
