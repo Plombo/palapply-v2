@@ -36,8 +36,8 @@ typedef struct {
     uint32_t *pixels;
 } Image32;
 
-png_color pal[256];
-int pal_ncolors; // number of colors in palette (1-256)
+static png_color pal[256];
+static int pal_ncolors; // number of colors in palette (1-256)
 
 bool readPalette(const char *path)
 {
