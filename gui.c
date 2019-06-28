@@ -498,6 +498,7 @@ static void convert_single(GtkWidget *widget, gpointer data)
     const gchar *palettePath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singlePaletteFileEntry")));
     const gchar *rawOutputPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "singleOutputFileEntry")));
 
+    gtk_progress_bar_set_fraction(progressBar, 0.0);
     gtk_widget_show_all(progressDialog);
 
     // add a ".png" suffix to the output path if it doesn't already have one
@@ -545,6 +546,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
     const gchar *outputDirPath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry")));
     const gchar *palettePath = gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "batchPaletteFileEntry")));
 
+    gtk_progress_bar_set_fraction(progressBar, 0.0);
     gtk_widget_show_all(progressDialog);
 
     struct InputName {
@@ -552,6 +554,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
         struct InputName *next;
     };
     struct InputName *nameList = NULL, *cur = NULL;
+    unsigned int numInputFiles = 0;
     const gchar *name;
     while ((name = g_dir_read_name(inputDir)))
     {
@@ -571,6 +574,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
                 cur->next = nameNode;
             }
             cur = nameNode;
+            ++numInputFiles;
         }
     }
     g_dir_close(inputDir);
@@ -578,6 +582,7 @@ static void convert_batch(GtkWidget *widget, gpointer data)
 
     bool ok = true;
     gint response = GTK_RESPONSE_NONE;
+    unsigned int convertedCount = 0;
     cur = nameList;
     while (cur != NULL)
     {
@@ -609,7 +614,9 @@ static void convert_batch(GtkWidget *widget, gpointer data)
             break;
         }
 
-        // TODO: update progress bar
+        // update progress bar
+        ++convertedCount;
+        gtk_progress_bar_set_fraction(progressBar, (gdouble) convertedCount / numInputFiles);
 
         cur = cur->next;
     }
