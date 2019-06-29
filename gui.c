@@ -763,7 +763,7 @@ static void show_about_dialog(GtkWidget *widget, gpointer data)
     GtkAboutDialog *aboutDialog = GTK_ABOUT_DIALOG(gtk_about_dialog_new());
 
     gtk_about_dialog_set_program_name(aboutDialog, "PalApply v2");
-    gtk_about_dialog_set_version(aboutDialog, "v2.0.0");
+    gtk_about_dialog_set_version(aboutDialog, "v2.0.1");
     gtk_about_dialog_set_copyright(aboutDialog, "Copyright (c) 2010-2019 Bryan Cain");
     gtk_about_dialog_set_license_type(aboutDialog, GTK_LICENSE_GPL_3_0);
 #ifdef _WIN32
