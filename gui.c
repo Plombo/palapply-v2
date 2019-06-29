@@ -759,8 +759,13 @@ static void show_about_dialog(GtkWidget *widget, gpointer data)
     gtk_about_dialog_set_version(aboutDialog, "Pre-release");
     gtk_about_dialog_set_copyright(aboutDialog, "Copyright (c) 2010-2019 Bryan Cain");
     gtk_about_dialog_set_license_type(aboutDialog, GTK_LICENSE_GPL_3_0);
+#ifdef _WIN32
+    // For some reason, clicking on links doesn't work in GTK for Windows. Work around this by displaying the URL as plain text instead.
+    gtk_about_dialog_set_website_label(aboutDialog, "https://github.com/Plombo/palapply-v2");
+#else
     gtk_about_dialog_set_website(aboutDialog, "https://github.com/Plombo/palapply-v2");
     gtk_about_dialog_set_website_label(aboutDialog, "Website");
+#endif
     const gchar *authors[] = {"Bryan Cain", NULL};
     gtk_about_dialog_set_authors(aboutDialog, authors);
 
