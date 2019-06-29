@@ -274,6 +274,48 @@ static void choose_output_directory_batch(GtkWidget *widget, gpointer data)
     choose_directory(builder, entry, "Select output directory");
 }
 
+// enable the "Convert" button only if all required text fields have been filled
+static void convert_button_enable_single(GtkBuilder *builder)
+{
+    gint inputPathCount = gtk_entry_buffer_get_length(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singleInputFileEntry"))));
+    gint outputPathCount = gtk_entry_buffer_get_length(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singleOutputFileEntry"))));
+    gint palettePathCount = gtk_entry_buffer_get_length(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singlePaletteFileEntry"))));
+
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "singleFileConvertButton")),
+            inputPathCount > 0 && outputPathCount > 0 && palettePathCount > 0);
+}
+
+// enable the "Convert" button only if all required text fields have been filled
+static void convert_button_enable_batch(GtkBuilder *builder)
+{
+    gint inputPathCount = gtk_entry_buffer_get_length(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchInputDirEntry"))));
+    gint outputPathCount = gtk_entry_buffer_get_length(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry"))));
+    gint palettePathCount = gtk_entry_buffer_get_length(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchPaletteFileEntry"))));
+
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "batchConvertButton")),
+            inputPathCount > 0 && outputPathCount > 0 && palettePathCount > 0);
+}
+
+static void text_inserted_single(GtkEntryBuffer *buffer, guint position, gchar *chars, guint count, gpointer data)
+{
+    convert_button_enable_single((GtkBuilder*) data);
+}
+
+static void text_deleted_single(GtkEntryBuffer *buffer, guint position, guint count, gpointer data)
+{
+    convert_button_enable_single((GtkBuilder*) data);
+}
+
+static void text_inserted_batch(GtkEntryBuffer *buffer, guint position, gchar *chars, guint count, gpointer data)
+{
+    convert_button_enable_batch((GtkBuilder*) data);
+}
+
+static void text_deleted_batch(GtkEntryBuffer *buffer, guint position, guint count, gpointer data)
+{
+    convert_button_enable_batch((GtkBuilder*) data);
+}
+
 // inserts text at the end of a GtkTextBuffer
 static void text_buffer_append(GtkTextBuffer *textBuffer, const gchar *text)
 {
@@ -791,6 +833,36 @@ int main(int argc, char **argv)
 
     GObject *dialog = gtk_builder_get_object(builder, "progressDialog");
     g_signal_connect(dialog, "show", G_CALLBACK(on_show_progress_dialog), builder);
+
+    // Only enable the "convert" button when all of the requisite text fields have text in them.
+    convert_button_enable_single(builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singleInputFileEntry")))),
+            "inserted-text", G_CALLBACK(text_inserted_single), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singleInputFileEntry")))),
+            "deleted-text", G_CALLBACK(text_deleted_single), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singleOutputFileEntry")))),
+            "inserted-text", G_CALLBACK(text_inserted_single), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singleOutputFileEntry")))),
+            "deleted-text", G_CALLBACK(text_deleted_single), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singlePaletteFileEntry")))),
+            "inserted-text", G_CALLBACK(text_inserted_single), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "singlePaletteFileEntry")))),
+            "deleted-text", G_CALLBACK(text_deleted_single), builder);
+
+    // Do the same thing as the last block, but for batch mode.
+    convert_button_enable_batch(builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchInputDirEntry")))),
+            "inserted-text", G_CALLBACK(text_inserted_batch), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchInputDirEntry")))),
+            "deleted-text", G_CALLBACK(text_deleted_batch), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry")))),
+            "inserted-text", G_CALLBACK(text_inserted_batch), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchOutputDirEntry")))),
+            "deleted-text", G_CALLBACK(text_deleted_batch), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchPaletteFileEntry")))),
+            "inserted-text", G_CALLBACK(text_inserted_batch), builder);
+    g_signal_connect(G_OBJECT(gtk_entry_get_buffer(GTK_ENTRY(gtk_builder_get_object(builder, "batchPaletteFileEntry")))),
+            "deleted-text", G_CALLBACK(text_deleted_batch), builder);
 
     // Populate the help dialogs with the help text. Ideally, this would be done in Glade, but it doesn't seem to
     // support populating GtkTextBuffers with markup.
