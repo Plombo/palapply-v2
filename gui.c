@@ -687,6 +687,11 @@ static void convert_batch(GtkWidget *widget, gpointer data)
         text_buffer_append(progressLog, "\nAn error occurred");
         scroll_to_bottom(progressTextView);
     }
+    else if (numInputFiles == 0)
+    {
+        text_buffer_append(progressLog, "No input files\n");
+        scroll_to_bottom(progressTextView);
+    }
     else
     {
         gtk_progress_bar_set_fraction(progressBar, 1.0);
