@@ -27,7 +27,7 @@ static const char *singleFileHelpText =
     "\n"
     "The path to the output image file goes in the \"output image\" field. The output image is the file that the finished product will be saved to. The output image must be in PNG format. It will be an image in indexed format that uses the palette specified in the \"palette image\" field.\n"
     "\n"
-    "The palette file is specified in the \"palette image\" field. It must be an image in PNG or GIF format in <i>indexed color mode</i>, meaning the image must already have a palette. The image's internal palette will be applied to the input image.\n"
+    "The palette file is specified in the \"palette\" field. If it is an image in PNG or GIF format, it must be in <i>indexed color mode</i>, meaning the image must already have a palette. The image's internal palette will be applied to the input image. Alternatively, you can use a palette in ACT format instead of an image. Either way, note that this field contains the path to a single file, not a directory."
     "\n"
     "Once you have specified all three files, click on the \"Convert\" button to apply the palette to the image.";
 
@@ -48,7 +48,7 @@ static const char *batchHelpText =
     "\n"
     "<i><b>Note</b>: If you want to edit the existing image files instead of saving the result to another file, make the input and output directories the same.</i>\n"
     "\n"
-    "The palette file is specified in the \"palette image\" field. It must be an image in PNG or GIF format in <i>indexed color mode</i>, meaning the image must already have a palette. The image's internal palette will be applied to the input image. Note that this field contains the path to a single file, not a directory."
+    "The palette file is specified in the \"palette\" field. If it is an image in PNG or GIF format, it must be in <i>indexed color mode</i>, meaning the image must already have a palette. The image's internal palette will be applied to all input images. Alternatively, you can use a palette in ACT format instead of an image. Either way, note that this field contains the path to a single file, not a directory."
     "\n"
     "Once you have filled in all three fields, click on the \"Convert\" button to apply the palette to the images.";
 

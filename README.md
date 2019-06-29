@@ -7,11 +7,18 @@ PalApply v2 is a complete rewrite of PalApply, a program that converts RGBA, RGB
 PalApply v2 has some key differences from the original PalApply:
 * If the source image has non-trivial alpha (partial transparency), then in addition to the usual indexed image, PalApply v2 will save a corresponding *alpha mask* that can be used with OpenBOR's `alphamask` command.
 * If the source image has any transparency at all, fully transparent pixels will be mapped to the transparent color (the first color in the palette).
-* The palette must be specified using an image file; there is no longer support for palettes in .pal/.act/.gpl format.
+* The palette must be an image in PNG or GIF format or a palette in .act format; there is no longer support for palettes in .pal/.gpl format.
 * All output is in PNG format. GIF, PCX, and BMP are still supported as input formats, just not for output.
 * As a tradeoff for the above, the PNGs written by PalApply v2 are compressed to a small file size and optimized for fast loading. This is in sharp contrast to the poorly encoded PNGs written by the original PalApply, which were often larger than the equivalent GIFs.
 * The user interface of PalApply v2 is similar to that of its predecessor, but is more polished in various ways.
 * PalApply v2 is written in C rather than Java, so it doesn't require the Java runtime to be installed.
+
+## Version history
+### v2.0.1
+* Added support for palettes in .act format.
+
+### v2.0.0
+* Initial release.
 
 ## Compiling
 ### Windows
