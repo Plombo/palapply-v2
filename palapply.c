@@ -29,6 +29,10 @@
 #include "SDL_image.h"
 #include "palapply.h"
 
+#ifndef _WIN32
+#define stricmp strcasecmp
+#endif
+
 typedef struct {
     uint32_t w;
     uint32_t h;
@@ -39,7 +43,32 @@ typedef struct {
 static png_color pal[256];
 static int pal_ncolors; // number of colors in palette (1-256)
 
-bool readPalette(const char *path)
+static bool readPaletteFromACT(const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+
+    if (fp == NULL)
+    {
+        return false;
+    }
+
+    for (int i = 0; i < 256; i++)
+    {
+        if (fread(&pal[i].red, 1, 1, fp) != 1 ||
+            fread(&pal[i].green, 1, 1, fp) != 1 ||
+            fread(&pal[i].blue, 1, 1, fp) != 1)
+        {
+            fclose(fp);
+            return false;
+        }
+    }
+
+    pal_ncolors = 256;
+    fclose(fp);
+    return true;
+}
+
+static bool readPaletteFromImage(const char *path)
 {
     SDL_Surface *image = IMG_Load(path);
     if (!image)
@@ -65,6 +94,19 @@ bool readPalette(const char *path)
         printf("read palette with %i colors from %s\n", pal_ncolors, path);
         SDL_FreeSurface(image);
         return true;
+    }
+}
+
+bool readPalette(const char *path)
+{
+    const char *extension = strrchr(path, '.');
+    if (extension != NULL && stricmp(extension, ".act") == 0)
+    {
+        return readPaletteFromACT(path);
+    }
+    else
+    {
+        return readPaletteFromImage(path);
     }
 }
 

@@ -58,9 +58,10 @@ static void choose_palette_file(GtkBuilder *builder, GtkEntry *entry)
 
     // Both filter
     GtkFileFilter *filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(filter, "All palette sources (*.png, *.gif)");
+    gtk_file_filter_set_name(filter, "All palette sources (*.png, *.gif, *.act)");
     gtk_file_filter_add_mime_type(filter, "image/png");
     gtk_file_filter_add_mime_type(filter, "image/gif");
+    gtk_file_filter_add_pattern(filter, "*.act");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 
     // PNG filter
@@ -73,6 +74,12 @@ static void choose_palette_file(GtkBuilder *builder, GtkEntry *entry)
     filter = gtk_file_filter_new();
     gtk_file_filter_set_name(filter, "Graphics Interchange Format (*.gif)");
     gtk_file_filter_add_mime_type(filter, "image/gif");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+
+    // ACT filter
+    filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "Photoshop palette (*.act)");
+    gtk_file_filter_add_pattern(filter, "*.act");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
 
     res = gtk_dialog_run(GTK_DIALOG(dialog));
