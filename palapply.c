@@ -99,15 +99,31 @@ static bool readPaletteFromImage(const char *path)
 
 bool readPalette(const char *path)
 {
+    bool result;
+
     const char *extension = strrchr(path, '.');
     if (extension != NULL && stricmp(extension, ".act") == 0)
     {
-        return readPaletteFromACT(path);
+        result = readPaletteFromACT(path);
     }
     else
     {
-        return readPaletteFromImage(path);
+        result = readPaletteFromImage(path);
     }
+
+    // ACT and GIF palettes are always power-of-two sizes, so they're padded out with unused blacks or whites.
+    // PNG has no such limitation, so we can reduce the size of our output images by removing the padding from the
+    // palette with a simple algorithm: while the last two colors in the palette are the same, reduce the size of the
+    // palette by 1. This removes all but 1 of the padding entries while ensuring that no colors are lost.
+    if (result == true)
+    {
+        while (pal_ncolors > 2 && 0 == memcmp(&pal[pal_ncolors - 2], &pal[pal_ncolors - 1], 3))
+        {
+            --pal_ncolors;
+        }
+    }
+
+    return result;
 }
 
 SDL_Surface *readSourceImage(const char *path)
