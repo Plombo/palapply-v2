@@ -146,6 +146,7 @@ SDL_Surface *readSourceImage(const char *path)
 
     SDL_Surface *image32 = SDL_CreateRGBSurface(0, image->w, image->h, 32,
             0xFF, 0xFF00, 0xFF0000, image->format->Amask ? 0xFF000000 : 0);
+    SDL_SetSurfaceBlendMode(image, SDL_BLENDMODE_NONE);
     SDL_BlitSurface(image, NULL, image32, NULL);
     SDL_FreeSurface(image);
 
